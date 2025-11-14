@@ -1,0 +1,52 @@
+# This workflow is named "Backend CI/CD"
+name: Backend CI/CD
+
+# This workflow will be triggered on pushes to the "main" branch
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# The jobs to be executed in this workflow
+jobs:
+  build:
+    # This job will run on the latest version of Ubuntu
+    runs-on: ubuntu-latest
+
+    # Sets the working directory to the 'backend' folder
+    defaults:
+      run:
+        working-directory: ./backend
+
+    strategy:
+      # This job will be run with Node.js version 18.x
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    # This step checks out your repository code
+    - uses: actions/checkout@v3
+
+    # This step sets up Node.js with the specified version
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        # Cache npm dependencies in the backend directory
+        cache-dependency-path: backend/package-lock.json
+
+    # This step installs the backend dependencies
+    - name: Install dependencies
+      run: npm install
+
+    # This step can be used to run your backend tests
+    # Replace 'npm test' with your actual test command if different
+    - name: Run tests
+      run: npm test --if-present
+
+    # This step can be used to build your backend application if needed
+    # Add a build script to your package.json if you have one
+    - name: Build
+      run: npm run build --if-present

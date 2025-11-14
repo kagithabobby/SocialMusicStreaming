@@ -1,0 +1,83 @@
+# This workflow is named "Frontend CI/CD"
+name: Frontend CI/CD
+
+# This workflow will be triggered on pushes to the "main" branch
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# The jobs to be executed in this workflow
+jobs:
+  build:
+    # This job will run on the latest version of Ubuntu
+    runs-on: ubuntu-latest
+
+    # Sets the working directory to the 'frontend' folder
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    strategy:
+      # This job will be run with Node.js version 18.x
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    # This step checks out your repository code, updated to v4
+    - uses: actions/checkout@v4
+
+    # This step sets up Node.js with the specified version, updated to v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        # Cache npm dependencies in the frontend directory
+        cache-dependency-path: frontend/package-lock.json
+
+    # This step installs the frontend dependencies
+    - name: Install dependencies
+      run: npm install
+
+    # This step can be used to run your frontend tests
+    # Replace 'npm test' with your actual test command if different
+    - name: Run tests
+      run: npm test --if-present
+
+    # This step builds your frontend application
+    # It assumes you are using a build tool like Vite or Create React App
+    - name: Build
+      run: npm run build --if-present
+
+    # This step uploads the build artifact for deployment, updated to v3
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        # Upload the 'dist' directory from the 'frontend' folder
+        path: './frontend/dist'
+
+  # This new job handles the deployment to GitHub Pages
+  deploy:
+    # This job depends on the 'build' job finishing successfully
+    needs: build
+
+    # Permissions needed for the deployment job
+    permissions:
+      pages: write
+      id-token: write
+
+    # Specifies the deployment environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # This job will also run on the latest version of Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      # This is the deployment step, updated to v4
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
